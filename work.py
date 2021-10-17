@@ -73,7 +73,7 @@ def show_expenses(msg):
         bot.send_message(msg.chat.id, expenses)
         send_keyboard(msg, "Чем еще могу помочь?") # TODO: new phrase
 
-'''
+
 # выыделяет одно дело, которое пользователь хочет удалить
 def delete_one_plan(msg):
     markup = types.ReplyKeyboardMarkup(row_width=2)
@@ -108,7 +108,7 @@ def delete_all_plans(msg):
         con.commit()
         bot.send_message(msg.chat.id, 'Удалены все дела. Хорошего отдыха!')
         send_keyboard(msg, "Чем еще могу помочь?")
-'''
+
 
 # привязываем функции к кнопкам на клавиатуре
 def callback_worker(call):

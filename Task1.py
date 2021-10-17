@@ -16,7 +16,7 @@ def send_keyboard(message, text="Привет, начинается новая �
     itembtn1 = types.KeyboardButton('Ввести новые расходы')
     itembtn2 = types.KeyboardButton('Показать список трат')
     itembtn3 = types.KeyboardButton('Удалить траты')
-    itembtn4 = types.KeyboardButton('Показать все расходы за день')
+    itembtn4 = types.KeyboardButton('Показать все расходы за сегодня')
     itembtn5 = types.KeyboardButton('График трат')
     itembtn6 = types.KeyboardButton('Обработать файл с тратами')
     itembtn7 = types.KeyboardButton('Отдыхаем!')
@@ -50,15 +50,25 @@ def add_expense(msg):
         text_from_user = str(msg.text)
         dt_from_user = text_from_user.split(' ')[0]
 
-        if dt_from_user == 'Сегодня': # TODO lower
+
+        if len(dt_from_user)==5 and dt_from_user[2]=='.':
+            dt_in = int(dt_from_user[:2])
+            month_in = int(dt_from_user[4:5])
+            while True:
+                if dt_in > 31 or month_in > 12:
+                    bot.send_message(msg.chat.id, 'Неверный формат даты')
+                    dt = str(today)
+                    break
+                else:
+                    dt_parts = dt_from_user.split('.')
+                    dt = datetime.strptime('-'.join(['2021', dt_parts[1], dt_parts[0]]), '%Y-%m-%d').date()
+                bot.send_message(msg.chat.id, 'Неверный формат даты')
+        elif dt_from_user == 'Сегодня': # TODO lower
             dt = datetime.strptime(dt_from_user.replace('Сегодня', str(today)), '%Y-%m-%d').date()
         elif dt_from_user == 'Вчера': # TODO lower
             dt = datetime.strptime(dt_from_user.replace('Вчера', str(today - timedelta(days=1))), '%Y-%m-%d').date()
-        elif len(dt_from_user) == 5 and dt_from_user[2] == '.':
-            dt_parts = dt_from_user.split('.')
-            dt = datetime.strptime('-'.join(['2021', dt_parts[1], dt_parts[0]]), '%Y-%m-%d').date()
         else:
-            return 'Неверный формат даты'
+            bot.send_message(msg.chat.id, 'Неверный формат даты')
 
         expense_txt = text_from_user.split(' ')[1]
         expense_amt = text_from_user.split(' ')[2]
@@ -68,14 +78,21 @@ def add_expense(msg):
     bot.send_message(msg.chat.id, 'Записано!')
     send_keyboard(msg, text="Что дальше?")
 
-# просто функция, которая делает нам красивые строки для отправки пользователю
+# функция, для отправки пользователю expense, amt
 def get_expenses_string(expenses):
     expenses_str = []
     for val in list(enumerate(expenses)):
-        expenses_str.append(str(val[0] + 1) + '. ' + val[1][0] +' ' + str(val[1][1]) + '\n')
+        expenses_str.append(str(val[0] + 1) + '. ' + val[1][0] + ' ' + str(val[1][1]) + '\n')
     return ''.join(expenses_str)
 
-# отправляем пользователю его расходы за сегодня
+# функция, для отправки пользователю dt, expense, amt
+def get_full_expenses(expenses):
+    expenses_str = []
+    for val in list(enumerate(expenses)):
+        expenses_str.append(str(val[0] + 1) + ' ' + val[1][0] + ' ' + str(val[1][1]) + ' ' + str(val[1][2]) + '\n')
+    return ''.join(expenses_str)
+
+# отправляем пользователю его расходы за выбранный день
 def show_expenses(msg):
     with sqlite3.connect('expenses_hse.db') as con:
         cursor = con.cursor()
@@ -98,23 +115,105 @@ def show_expenses(msg):
                         FROM expenses 
                         WHERE user_id==? and expense_dt==?""", (msg.from_user.id, dt))
         expenses = get_expenses_string(cursor.fetchall())
-        bot.send_message(msg.chat.id, expenses)
-        send_keyboard(msg, "Чем еще могу помочь?") # TODO: new phrase
+        if len(expenses) == 0:
+            bot.send_message(msg.chat.id, 'Пока ничего нет. Важно не забывать вносить все расходы')
+        else:
+            bot.send_message(msg.chat.id, expenses)
+            send_keyboard(msg, "Чем еще могу помочь?") # TODO: new phrase
+
+# отправляем пользователю его расходы за сегодня
+def show_expenses_today(msg):
+    with sqlite3.connect('expenses_hse.db') as con:
+        cursor = con.cursor()
+        cursor.execute("""SELECT 
+                                expense, amount
+                                FROM expenses 
+                                WHERE user_id==? and expense_dt==?""", (msg.from_user.id, today))
+        expenses = get_expenses_string(cursor.fetchall())
+        if len(expenses) == 0:
+            bot.send_message(msg.chat.id, 'Пока ничего нет. Важно не забывать вносить все расходы')
+        else:
+            bot.send_message(msg.chat.id, expenses)
+            send_keyboard(msg, "Чем еще могу помочь?")  # TODO: new phrase
+
+# выыделяет одно дело, которое пользователь хочет удалить
+def choose_expense_to_delete(msg):
+    markup = types.ReplyKeyboardMarkup(row_width=2)
+    with sqlite3.connect('expenses_hse.db') as con:
+        cursor = con.cursor()
+
+        text_from_user = str(msg.text)
+        dt_from_user = text_from_user.split(' ')[0]
+
+        global dt_delete
+        if dt_from_user == 'Сегодня':
+            dt_delete = datetime.strptime(dt_from_user.replace('Сегодня', str(today)), '%Y-%m-%d').date()
+        elif dt_from_user == 'Вчера':
+            dt_delete = datetime.strptime(dt_from_user.replace('Вчера', str(today - timedelta(days=1))), '%Y-%m-%d').date()
+        elif len(dt_from_user) == 5 and dt_from_user[2] == '.':
+            dt_parts = dt_from_user.split('.')
+            dt_delete = datetime.strptime('-'.join(['2021', dt_parts[1], dt_parts[0]]), '%Y-%m-%d').date()
+        else:
+            return 'Неверный формат даты'
+
+        # достаем все траты пользователя
+        cursor.execute("""SELECT 
+                                expense_dt, expense, amount
+                                        FROM expenses 
+                                        WHERE user_id==? and expense_dt==?""", (msg.from_user.id, dt_delete)) # TODO order by
+
+        # достанем результат запроса
+        expenses = cursor.fetchall()
+
+        for val in expenses:
+            markup.add(types.KeyboardButton(val[1] + ' ' + str(val[2])))
+        msg = bot.send_message(msg.from_user.id,
+                               text="Выбери одну трату из списка",
+                               reply_markup=markup)
+        bot.register_next_step_handler(msg, delete_expense)
+
+def delete_expense(msg):
+    with sqlite3.connect('expenses_hse.db') as con:
+        cursor = con.cursor()
+        cursor.execute('DELETE FROM expenses WHERE user_id==? AND expense==? and expense_dt ==? and amount==?',
+                       (msg.from_user.id, msg.text.split(' ')[0], dt_delete, msg.text.split(' ')[1]))
+        bot.send_message(msg.chat.id, 'Выбранная трата удалена')
+        send_keyboard(msg, "Что делаем дальше?")
+
+
 
 
 # привязываем функции к кнопкам на клавиатуре
 def callback_worker(call):
     if call.text == "Ввести новые расходы":
-        msg = bot.send_message(call.chat.id, 'Введи расход в формате дата (пока только сегодня), позиция, сумма')
-        bot.register_next_step_handler(msg, add_expense)
+        try:
+            msg = bot.send_message(call.chat.id, 'Введи расход в формате Сегодня, Вчера или дд.мм, позиция, сумма')
+            bot.register_next_step_handler(msg, add_expense)
+        except:
+            bot.send_message(call.chat.id, 'wrong format')
 
     elif call.text == "Показать список трат":
         try:
-            msg = bot.send_message(call.chat.id, 'Введи дату, за которую показать траты: сегодня, вчера или дд.мм')
+            msg = bot.send_message(call.chat.id, 'Введи дату, за которую показать траты: Сегодня, Вчера или дд.мм')
             bot.register_next_step_handler(msg, show_expenses)
+        except:
+            bot.send_message(call.chat.id, 'Пока ничего нет. Очень важно не забывать вносить все расходы')
+            send_keyboard(call, "Чем еще могу помочь?") # TODO: new phrase
+
+    elif call.text == "Показать все расходы за сегодня":
+        try:
+            show_expenses_today(call)
         except:
             bot.send_message(call.chat.id, 'Пока ничего нет. Очень важно не забывать все расходы')
             send_keyboard(call, "Чем еще могу помочь?") # TODO: new phrase
+
+    elif call.text == "Удалить траты":
+        try:
+            msg = bot.send_message(call.chat.id, 'Введи дату, за которую показать траты: Сегодня, Вчера или дд.мм')
+            bot.register_next_step_handler(msg, choose_expense_to_delete)
+        except:
+            bot.send_message(call.chat.id, 'В этот день не было трат')
+            send_keyboard(call, "Чем еще могу помочь?")  # TODO: new phrase
 
 
 bot.polling(none_stop=True)
