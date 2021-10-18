@@ -146,3 +146,12 @@ def callback_worker(call):
 '''
 
 bot.polling(none_stop=True)
+
+
+def visualize_bar_chart(x, x_label, y, y_label, title):
+    plt.title(title)
+    plt.xlabel(x_label)
+    plt.ylabel(y_label)
+    index = np.arange(len(x))
+    plt.bar(x, y)
+    return plt

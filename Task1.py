@@ -3,8 +3,14 @@ from telebot import types
 import sqlite3
 from datetime import date, timedelta
 from datetime import datetime
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
+import numpy as np
+
 today = date.today()
 yesterday = today - timedelta(days=1)
+week = today - timedelta(days=7)
 
 bot = telebot.TeleBot("2013562061:AAGi4Dwq_wZwiFzhcqG9tnwUh0kmo6RHRuM")
 
@@ -92,6 +98,7 @@ def get_full_expenses(expenses):
         expenses_str.append(str(val[0] + 1) + ' ' + val[1][0] + ' ' + str(val[1][1]) + ' ' + str(val[1][2]) + '\n')
     return ''.join(expenses_str)
 
+
 # отправляем пользователю его расходы за выбранный день
 def show_expenses(msg):
     with sqlite3.connect('expenses_hse.db') as con:
@@ -128,7 +135,7 @@ def show_expenses_today(msg):
         cursor.execute("""SELECT 
                                 expense, amount
                                 FROM expenses 
-                                WHERE user_id==? and expense_dt==?""", (msg.from_user.id, today))
+                                WHERE user_id==? and expense_dt==?""", (msg.from_user.id, today)) # TODO show sum for day
         expenses = get_expenses_string(cursor.fetchall())
         if len(expenses) == 0:
             bot.send_message(msg.chat.id, 'Пока ничего нет. Важно не забывать вносить все расходы')
@@ -180,7 +187,36 @@ def delete_expense(msg):
         bot.send_message(msg.chat.id, 'Выбранная трата удалена')
         send_keyboard(msg, "Что делаем дальше?")
 
+# параметры для графика
+def get_expenses_for_plt(expenses):
+    values = []
+    exp_dt = []
+    for val in expenses:
+        values.append(str(val[1]))
+        exp_dt.append(str(val[0]))
+    return ' '.join(values), ' '.join(exp_dt)
 
+# График трат
+def send_plot(msg):
+    with sqlite3.connect('expenses_hse.db') as con:
+        cursor = con.cursor()
+        cursor.execute("""select strftime('%d', expense_dt)||'.'||strftime('%m', expense_dt) as mnth, sum(amount)
+                                from expenses
+                               WHERE user_id==? and expense_dt between ? and ? group by mnth""",
+                       (msg.from_user.id, week, today))
+        expenses,expenses_dt  = get_expenses_for_plt(cursor.fetchall())
+
+        x = list(expenses_dt.split(' '))
+        y = list(map(float, expenses.split(' ')))
+
+        plt.title('Траты за неделю')
+        plt.xlabel('Дни трат')
+        plt.ylabel('Сумма за день')
+        plt.bar(x, y)
+
+        plt.savefig('expenses_by_week_plot.png', dpi=300)
+        bot.send_photo(msg.chat.id, photo=open('expenses_by_week_plot.png', 'rb'))
+        send_keyboard(msg, "Что делаем дальше?")
 
 
 # привязываем функции к кнопкам на клавиатуре
@@ -213,6 +249,13 @@ def callback_worker(call):
             bot.register_next_step_handler(msg, choose_expense_to_delete)
         except:
             bot.send_message(call.chat.id, 'В этот день не было трат')
+            send_keyboard(call, "Чем еще могу помочь?")  # TODO: new phrase
+
+    elif call.text == "График трат":
+        try:
+            send_plot(call)
+        except:
+            bot.send_message(call.chat.id, 'Нет трат за неделю')
             send_keyboard(call, "Чем еще могу помочь?")  # TODO: new phrase
 
 
