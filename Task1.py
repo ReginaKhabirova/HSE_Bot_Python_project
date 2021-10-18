@@ -4,6 +4,7 @@ import sqlite3
 from datetime import date, timedelta
 from datetime import datetime
 import matplotlib
+
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import numpy as np
@@ -26,7 +27,7 @@ def send_keyboard(message, text="Привет, начинается новая �
     itembtn5 = types.KeyboardButton('График трат')
     itembtn6 = types.KeyboardButton('Обработать файл с тратами')
     itembtn7 = types.KeyboardButton('Отдыхаем!')
-    keyboard.add(itembtn1, itembtn2)  #1 и 2 на первый ряд
+    keyboard.add(itembtn1, itembtn2)  # 1 и 2 на первый ряд
     keyboard.add(itembtn3, itembtn4, itembtn5, itembtn6, itembtn7)
 
     # пришлем это все сообщением и запишем выбранный вариант
@@ -35,6 +36,7 @@ def send_keyboard(message, text="Привет, начинается новая �
 
     # отправим этот вариант в функцию, которая его обработает
     bot.register_next_step_handler(msg, callback_worker)
+
 
 conn = sqlite3.connect('expenses_hse.db')
 
@@ -48,6 +50,7 @@ try:
 except:
     pass
 
+
 # функции
 # Расходы в хранилище
 def add_expense(msg):
@@ -56,8 +59,7 @@ def add_expense(msg):
         text_from_user = str(msg.text)
         dt_from_user = text_from_user.split(' ')[0]
 
-
-        if len(dt_from_user)==5 and dt_from_user[2]=='.':
+        if len(dt_from_user) == 5 and dt_from_user[2] == '.':
             dt_in = int(dt_from_user[:2])
             month_in = int(dt_from_user[4:5])
             while True:
@@ -69,9 +71,9 @@ def add_expense(msg):
                     dt_parts = dt_from_user.split('.')
                     dt = datetime.strptime('-'.join(['2021', dt_parts[1], dt_parts[0]]), '%Y-%m-%d').date()
                 bot.send_message(msg.chat.id, 'Неверный формат даты')
-        elif dt_from_user == 'Сегодня': # TODO lower
+        elif dt_from_user == 'Сегодня':  # TODO lower
             dt = datetime.strptime(dt_from_user.replace('Сегодня', str(today)), '%Y-%m-%d').date()
-        elif dt_from_user == 'Вчера': # TODO lower
+        elif dt_from_user == 'Вчера':  # TODO lower
             dt = datetime.strptime(dt_from_user.replace('Вчера', str(today - timedelta(days=1))), '%Y-%m-%d').date()
         else:
             bot.send_message(msg.chat.id, 'Неверный формат даты')
@@ -84,12 +86,14 @@ def add_expense(msg):
     bot.send_message(msg.chat.id, 'Записано!')
     send_keyboard(msg, text="Что дальше?")
 
+
 # функция, для отправки пользователю expense, amt
 def get_expenses_string(expenses):
     expenses_str = []
     for val in list(enumerate(expenses)):
         expenses_str.append(str(val[0] + 1) + '. ' + val[1][0] + ' ' + str(val[1][1]) + '\n')
     return ''.join(expenses_str)
+
 
 # функция, для отправки пользователю dt, expense, amt
 def get_full_expenses(expenses):
@@ -126,7 +130,8 @@ def show_expenses(msg):
             bot.send_message(msg.chat.id, 'Пока ничего нет. Важно не забывать вносить все расходы')
         else:
             bot.send_message(msg.chat.id, expenses)
-            send_keyboard(msg, "Чем еще могу помочь?") # TODO: new phrase
+            send_keyboard(msg, "Чем еще могу помочь?")  # TODO: new phrase
+
 
 # отправляем пользователю его расходы за сегодня
 def show_expenses_today(msg):
@@ -135,13 +140,15 @@ def show_expenses_today(msg):
         cursor.execute("""SELECT 
                                 expense, amount
                                 FROM expenses 
-                                WHERE user_id==? and expense_dt==?""", (msg.from_user.id, today)) # TODO show sum for day
+                                WHERE user_id==? and expense_dt==?""",
+                       (msg.from_user.id, today))  # TODO show sum for day
         expenses = get_expenses_string(cursor.fetchall())
         if len(expenses) == 0:
             bot.send_message(msg.chat.id, 'Пока ничего нет. Важно не забывать вносить все расходы')
         else:
             bot.send_message(msg.chat.id, expenses)
             send_keyboard(msg, "Чем еще могу помочь?")  # TODO: new phrase
+
 
 # выыделяет одно дело, которое пользователь хочет удалить
 def choose_expense_to_delete(msg):
@@ -156,7 +163,8 @@ def choose_expense_to_delete(msg):
         if dt_from_user == 'Сегодня':
             dt_delete = datetime.strptime(dt_from_user.replace('Сегодня', str(today)), '%Y-%m-%d').date()
         elif dt_from_user == 'Вчера':
-            dt_delete = datetime.strptime(dt_from_user.replace('Вчера', str(today - timedelta(days=1))), '%Y-%m-%d').date()
+            dt_delete = datetime.strptime(dt_from_user.replace('Вчера', str(today - timedelta(days=1))),
+                                          '%Y-%m-%d').date()
         elif len(dt_from_user) == 5 and dt_from_user[2] == '.':
             dt_parts = dt_from_user.split('.')
             dt_delete = datetime.strptime('-'.join(['2021', dt_parts[1], dt_parts[0]]), '%Y-%m-%d').date()
@@ -167,7 +175,8 @@ def choose_expense_to_delete(msg):
         cursor.execute("""SELECT 
                                 expense_dt, expense, amount
                                         FROM expenses 
-                                        WHERE user_id==? and expense_dt==?""", (msg.from_user.id, dt_delete)) # TODO order by
+                                        WHERE user_id==? and expense_dt==?""",
+                       (msg.from_user.id, dt_delete))  # TODO order by
 
         # достанем результат запроса
         expenses = cursor.fetchall()
@@ -179,6 +188,7 @@ def choose_expense_to_delete(msg):
                                reply_markup=markup)
         bot.register_next_step_handler(msg, delete_expense)
 
+
 def delete_expense(msg):
     with sqlite3.connect('expenses_hse.db') as con:
         cursor = con.cursor()
@@ -186,6 +196,7 @@ def delete_expense(msg):
                        (msg.from_user.id, msg.text.split(' ')[0], dt_delete, msg.text.split(' ')[1]))
         bot.send_message(msg.chat.id, 'Выбранная трата удалена')
         send_keyboard(msg, "Что делаем дальше?")
+
 
 # параметры для графика
 def get_expenses_for_plt(expenses):
@@ -196,6 +207,7 @@ def get_expenses_for_plt(expenses):
         exp_dt.append(str(val[0]))
     return ' '.join(values), ' '.join(exp_dt)
 
+
 # График трат
 def send_plot(msg):
     with sqlite3.connect('expenses_hse.db') as con:
@@ -204,7 +216,7 @@ def send_plot(msg):
                                 from expenses
                                WHERE user_id==? and expense_dt between ? and ? group by mnth""",
                        (msg.from_user.id, week, today))
-        expenses,expenses_dt  = get_expenses_for_plt(cursor.fetchall())
+        expenses, expenses_dt = get_expenses_for_plt(cursor.fetchall())
 
         x = list(expenses_dt.split(' '))
         y = list(map(float, expenses.split(' ')))
@@ -217,7 +229,20 @@ def send_plot(msg):
         plt.savefig('expenses_by_week_plot.png', dpi=300)
         bot.send_photo(msg.chat.id, photo=open('expenses_by_week_plot.png', 'rb'))
         send_keyboard(msg, "Что делаем дальше?")
+"""
+def send_file(msg):
+    with sqlite3.connect('expenses_hse.db') as con:
+        cursor = con.cursor()
 
+
+        file_info = bot.get_file(msg.document.file_id)
+        downloaded_file = bot.download_file(file_info.file_path)
+        # путь загрузки с именем файла
+        src = '/Users/habirova-rr/PycharmProjects/HSE/files' + msg.document.file_name
+        bot.send_message(msg.chat.id, 'Приветики')
+        ".import '/Users/habirova-rr/PycharmProjects/HSE/files' msg.document.file_name"
+
+"""
 # привязываем функции к кнопкам на клавиатуре
 def callback_worker(call):
     if call.text == "Ввести новые расходы":
@@ -233,14 +258,14 @@ def callback_worker(call):
             bot.register_next_step_handler(msg, show_expenses)
         except:
             bot.send_message(call.chat.id, 'Пока ничего нет. Очень важно не забывать вносить все расходы')
-            send_keyboard(call, "Чем еще могу помочь?") # TODO: new phrase
+            send_keyboard(call, "Чем еще могу помочь?")  # TODO: new phrase
 
     elif call.text == "Показать все расходы за сегодня":
         try:
             show_expenses_today(call)
         except:
             bot.send_message(call.chat.id, 'Пока ничего нет. Очень важно не забывать все расходы')
-            send_keyboard(call, "Чем еще могу помочь?") # TODO: new phrase
+            send_keyboard(call, "Чем еще могу помочь?")  # TODO: new phrase
 
     elif call.text == "Удалить траты":
         try:
@@ -256,6 +281,14 @@ def callback_worker(call):
         except:
             bot.send_message(call.chat.id, 'Нет трат за неделю')
             send_keyboard(call, "Чем еще могу помочь?")  # TODO: new phrase
-
+"""
+    elif call.text == "Обработать файл с тратами":
+        try:
+            msg = bot.send_message(call.chat.id, 'Загрузи файл в формате дата, название расхода, сумма')
+            bot.register_next_step_handler(msg, send_file)
+        except:
+            bot.send_message(call.chat.id, "Файл не загрузился")
+            send_keyboard(call, "Что делаем дальше?")
+"""
 
 bot.polling(none_stop=True)
