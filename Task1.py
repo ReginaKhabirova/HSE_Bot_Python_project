@@ -218,7 +218,6 @@ def send_plot(msg):
         bot.send_photo(msg.chat.id, photo=open('expenses_by_week_plot.png', 'rb'))
         send_keyboard(msg, "Что делаем дальше?")
 
-
 # привязываем функции к кнопкам на клавиатуре
 def callback_worker(call):
     if call.text == "Ввести новые расходы":
