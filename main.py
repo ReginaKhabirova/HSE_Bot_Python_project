@@ -4,6 +4,7 @@ import sqlite3
 from datetime import date, timedelta
 from datetime import datetime
 import matplotlib
+from emoji import emojize
 
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
@@ -260,6 +261,10 @@ def send_file(msg):
 
         bot.send_message(msg.chat.id, "Приветики. Файл загружен")
 
+def send_sticker(msg):
+    smile = emojize('😊', use_aliases=True)
+    bot.send_message(msg.chat.id, smile)
+
 # привязываем функции к кнопкам на клавиатуре
 def callback_worker(call):
     if call.text == "Ввести новые расходы":
@@ -307,5 +312,7 @@ def callback_worker(call):
             bot.send_message(call.chat.id, "Файл не загрузился")
             send_keyboard(call, "Что делаем дальше?")
 
+    elif call.text == "Отдыхаем!":
+        send_sticker(call)
 
 bot.polling(none_stop=True)

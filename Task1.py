@@ -4,6 +4,7 @@ import sqlite3
 from datetime import date, timedelta
 from datetime import datetime
 import matplotlib
+from emoji import emojize
 import requests
 import os
 
@@ -14,6 +15,7 @@ import numpy as np
 today = date.today()
 yesterday = today - timedelta(days=1)
 week = today - timedelta(days=7)
+smile = emojize('😊', use_aliases=True)
 
 bot = telebot.TeleBot("2022735224:AAEP7BtJxHTDS5k3C6s7hil1j3cU_-wQfsw")
 token = "2022735224:AAEP7BtJxHTDS5k3C6s7hil1j3cU_-wQfsw"
@@ -74,7 +76,7 @@ def add_expense(msg):
                     dt = datetime.strptime('-'.join(['2021', dt_parts[1], dt_parts[0]]), '%Y-%m-%d').date()
                 bot.send_message(msg.chat.id, 'Неверный формат даты')
         elif dt_from_user == 'Сегодня':  # TODO lower
-            dt = datetime.strptime(dt_from_user.replace('Сегодня', str(today)), '%Y-%m-%d').date()
+            dt = datetime.strptime(dt_from_user.lower().replace('сегодня', str(today)), '%Y-%m-%d').date()
         elif dt_from_user == 'Вчера':  # TODO lower
             dt = datetime.strptime(dt_from_user.replace('Вчера', str(today - timedelta(days=1))), '%Y-%m-%d').date()
         else:
@@ -131,8 +133,7 @@ def show_expenses(msg):
         if len(expenses) == 0:
             bot.send_message(msg.chat.id, 'Пока ничего нет. Важно не забывать вносить все расходы')
         else:
-            bot.send_message(msg.chat.id, expenses)
-            send_keyboard(msg, "Чем еще могу помочь?")  # TODO: new phrase
+            bot.send_message(msg.chat.id, expenses) # TODO: new phrase
 
 
 # отправляем пользователю его расходы за сегодня
@@ -149,8 +150,7 @@ def show_expenses_today(msg):
             bot.send_message(msg.chat.id, 'Пока ничего нет. Важно не забывать вносить все расходы')
         else:
             bot.send_message(msg.chat.id, expenses)
-            send_keyboard(msg, "Чем еще могу помочь?")  # TODO: new phrase
-
+            send_keyboard(msg, "Что делаем дальше?")
 
 # выыделяет одно дело, которое пользователь хочет удалить
 def choose_expense_to_delete(msg):
@@ -178,9 +178,7 @@ def choose_expense_to_delete(msg):
                                 expense_dt, expense, amount
                                         FROM expenses 
                                         WHERE user_id==? and expense_dt==?""",
-                       (msg.from_user.id, dt_delete))  # TODO order by
-
-        # достанем результат запроса
+                       (msg.from_user.id, dt_delete))
         expenses = cursor.fetchall()
 
         for val in expenses:
@@ -188,8 +186,7 @@ def choose_expense_to_delete(msg):
         msg = bot.send_message(msg.from_user.id,
                                text="Выбери одну трату из списка",
                                reply_markup=markup)
-        bot.register_next_step_handler(msg, delete_expense)
-
+        bot.register_next_step_handler(msg, delete_expense) # TODO добавить - ничего не удалять
 
 def delete_expense(msg):
     with sqlite3.connect('expenses_hse.db') as con:
@@ -248,20 +245,25 @@ def send_file(msg):
             new_file.write(downloaded_file)
 
         #file = requests.get('https://api.telegram.org/file/bot{0}/{1}'.format(token, file_info.file_path))
+        text = list(downloaded_file.decode('utf-8'))
 
-        with open('/Users/habirova-rr/Documents/ВШЭ' + "/" + file_name, 'r') as f:
-            input_file = list(f)
+        #with open('/Users/habirova-rr/Documents/ВШЭ' + "/" + file_name, 'r') as f:
+         #   input_file = list(f)
 
         file_lines = []
-        for r in input_file:
-            r = r.replace('\n', '')
+        for r in text:
+            #r = r.replace('\n', '')
             if len(r) > 14:
                 file_lines.append(r.split(' '))
 
         for line in file_lines:
             cursor.execute(sql, (msg.from_user.id, line[1], line[0], line[2]))
 
-        bot.send_message(msg.chat.id, "Приветики. Файл загружен")
+        #bot.send_message(msg.chat.id, "Приветики. Файл загружен")
+        bot.send_message(msg.chat.id, text)
+
+def send_sticker(msg):
+    bot.send_message(msg.chat.id, smile)
 
 # привязываем функции к кнопкам на клавиатуре
 def callback_worker(call):
@@ -278,14 +280,14 @@ def callback_worker(call):
             bot.register_next_step_handler(msg, show_expenses)
         except:
             bot.send_message(call.chat.id, 'Пока ничего нет. Очень важно не забывать вносить все расходы')
-            send_keyboard(call, "Чем еще могу помочь?")  # TODO: new phrase
+            send_keyboard(call, "Что делаем дальше?")
 
     elif call.text == "Показать все расходы за сегодня":
         try:
             show_expenses_today(call)
         except:
             bot.send_message(call.chat.id, 'Пока ничего нет. Очень важно не забывать все расходы')
-            send_keyboard(call, "Чем еще могу помочь?")  # TODO: new phrase
+            send_keyboard(call, "Что делаем дальше?")
 
     elif call.text == "Удалить траты":
         try:
@@ -293,14 +295,14 @@ def callback_worker(call):
             bot.register_next_step_handler(msg, choose_expense_to_delete)
         except:
             bot.send_message(call.chat.id, 'В этот день не было трат')
-            send_keyboard(call, "Чем еще могу помочь?")  # TODO: new phrase
+            send_keyboard(call, "Что делаем дальше?")
 
     elif call.text == "График трат":
         try:
             send_plot(call)
         except:
             bot.send_message(call.chat.id, 'Нет трат за неделю')
-            send_keyboard(call, "Чем еще могу помочь?")  # TODO: new phrase
+            send_keyboard(call, "Что делаем дальше?")
 
     elif call.text == "Обработать файл с тратами":
         try:
@@ -309,6 +311,9 @@ def callback_worker(call):
         except:
             bot.send_message(call.chat.id, "Файл не загрузился")
             send_keyboard(call, "Что делаем дальше?")
+
+    elif call.text == "Отдыхаем!":
+        send_sticker(call)
 
 
 bot.polling(none_stop=True)
