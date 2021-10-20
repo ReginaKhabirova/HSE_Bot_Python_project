@@ -4,6 +4,8 @@ import sqlite3
 from datetime import date, timedelta
 from datetime import datetime
 import matplotlib
+import requests
+import os
 
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
@@ -13,8 +15,8 @@ today = date.today()
 yesterday = today - timedelta(days=1)
 week = today - timedelta(days=7)
 
-bot = telebot.TeleBot("2013562061:AAGi4Dwq_wZwiFzhcqG9tnwUh0kmo6RHRuM")
-
+bot = telebot.TeleBot("2022735224:AAEP7BtJxHTDS5k3C6s7hil1j3cU_-wQfsw")
+token = "2022735224:AAEP7BtJxHTDS5k3C6s7hil1j3cU_-wQfsw"
 
 # напишем, что делать нашему боту при команде старт
 @bot.message_handler(commands=['start'])
@@ -229,20 +231,38 @@ def send_plot(msg):
         plt.savefig('expenses_by_week_plot.png', dpi=300)
         bot.send_photo(msg.chat.id, photo=open('expenses_by_week_plot.png', 'rb'))
         send_keyboard(msg, "Что делаем дальше?")
-"""
+
 def send_file(msg):
     with sqlite3.connect('expenses_hse.db') as con:
         cursor = con.cursor()
-
+        sql = """insert into expenses (user_id, expense, expense_dt, amount)
+                    values(?, ?, ?, ?)"""
 
         file_info = bot.get_file(msg.document.file_id)
-        downloaded_file = bot.download_file(file_info.file_path)
-        # путь загрузки с именем файла
-        src = '/Users/habirova-rr/PycharmProjects/HSE/files' + msg.document.file_name
-        bot.send_message(msg.chat.id, 'Приветики')
-        ".import '/Users/habirova-rr/PycharmProjects/HSE/files' msg.document.file_name"
+        file_name = msg.document.file_name
+        file_id_info = bot.get_file(msg.document.file_id)
+        downloaded_file = bot.download_file(file_id_info.file_path)
 
-"""
+
+        with open('/Users/habirova-rr/Documents/ВШЭ' + "/" + file_name, 'wb') as new_file:
+            new_file.write(downloaded_file)
+
+        #file = requests.get('https://api.telegram.org/file/bot{0}/{1}'.format(token, file_info.file_path))
+
+        with open('/Users/habirova-rr/Documents/ВШЭ' + "/" + file_name, 'r') as f:
+            input_file = list(f)
+
+        file_lines = []
+        for r in input_file:
+            r = r.replace('\n', '')
+            if len(r) > 14:
+                file_lines.append(r.split(' '))
+
+        for line in file_lines:
+            cursor.execute(sql, (msg.from_user.id, line[1], line[0], line[2]))
+
+        bot.send_message(msg.chat.id, "Приветики. Файл загружен")
+
 # привязываем функции к кнопкам на клавиатуре
 def callback_worker(call):
     if call.text == "Ввести новые расходы":
@@ -281,7 +301,7 @@ def callback_worker(call):
         except:
             bot.send_message(call.chat.id, 'Нет трат за неделю')
             send_keyboard(call, "Чем еще могу помочь?")  # TODO: new phrase
-"""
+
     elif call.text == "Обработать файл с тратами":
         try:
             msg = bot.send_message(call.chat.id, 'Загрузи файл в формате дата, название расхода, сумма')
@@ -289,6 +309,6 @@ def callback_worker(call):
         except:
             bot.send_message(call.chat.id, "Файл не загрузился")
             send_keyboard(call, "Что делаем дальше?")
-"""
+
 
 bot.polling(none_stop=True)

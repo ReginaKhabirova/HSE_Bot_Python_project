@@ -130,7 +130,7 @@ def show_expenses(msg):
             bot.send_message(msg.chat.id, 'Пока ничего нет. Важно не забывать вносить все расходы')
         else:
             bot.send_message(msg.chat.id, expenses)
-            send_keyboard(msg, "Чем еще могу помочь?")  # TODO: new phrase
+            send_keyboard(msg, "Что делаем дальше?")
 
 
 # отправляем пользователю его расходы за сегодня
@@ -147,7 +147,7 @@ def show_expenses_today(msg):
             bot.send_message(msg.chat.id, 'Пока ничего нет. Важно не забывать вносить все расходы')
         else:
             bot.send_message(msg.chat.id, expenses)
-            send_keyboard(msg, "Чем еще могу помочь?")  # TODO: new phrase
+            send_keyboard(msg, "Что делаем дальше?")
 
 
 # выыделяет одно дело, которое пользователь хочет удалить
@@ -229,20 +229,37 @@ def send_plot(msg):
         plt.savefig('expenses_by_week_plot.png', dpi=300)
         bot.send_photo(msg.chat.id, photo=open('expenses_by_week_plot.png', 'rb'))
         send_keyboard(msg, "Что делаем дальше?")
-"""
+
 def send_file(msg):
     with sqlite3.connect('expenses_hse.db') as con:
         cursor = con.cursor()
-
+        sql = """insert into expenses (user_id, expense, expense_dt, amount)
+                    values(?, ?, ?, ?)"""
 
         file_info = bot.get_file(msg.document.file_id)
-        downloaded_file = bot.download_file(file_info.file_path)
-        # путь загрузки с именем файла
-        src = '/Users/habirova-rr/PycharmProjects/HSE/files' + msg.document.file_name
-        bot.send_message(msg.chat.id, 'Приветики')
-        ".import '/Users/habirova-rr/PycharmProjects/HSE/files' msg.document.file_name"
+        file_name = msg.document.file_name
+        file_id_info = bot.get_file(msg.document.file_id)
+        downloaded_file = bot.download_file(file_id_info.file_path)
 
-"""
+        with open('/Users/habirova-rr/Documents/ВШЭ' + "/" + file_name, 'wb') as new_file:
+            new_file.write(downloaded_file)
+
+        #file = requests.get('https://api.telegram.org/file/bot{0}/{1}'.format(token, file_info.file_path))
+
+        with open('/Users/habirova-rr/Documents/ВШЭ' + "/" + file_name, 'r') as f:
+            input_file = list(f)
+
+        file_lines = []
+        for r in input_file:
+            r = r.replace('\n', '')
+            if len(r) > 14:
+                file_lines.append(r.split(' '))
+
+        for line in file_lines:
+            cursor.execute(sql, (msg.from_user.id, line[1], line[0], line[2]))
+
+        bot.send_message(msg.chat.id, "Приветики. Файл загружен")
+
 # привязываем функции к кнопкам на клавиатуре
 def callback_worker(call):
     if call.text == "Ввести новые расходы":
@@ -258,14 +275,14 @@ def callback_worker(call):
             bot.register_next_step_handler(msg, show_expenses)
         except:
             bot.send_message(call.chat.id, 'Пока ничего нет. Очень важно не забывать вносить все расходы')
-            send_keyboard(call, "Чем еще могу помочь?")  # TODO: new phrase
+            send_keyboard(call, "Что делаем дальше?")
 
     elif call.text == "Показать все расходы за сегодня":
         try:
             show_expenses_today(call)
         except:
             bot.send_message(call.chat.id, 'Пока ничего нет. Очень важно не забывать все расходы')
-            send_keyboard(call, "Чем еще могу помочь?")  # TODO: new phrase
+            send_keyboard(call, "Что делаем дальше")
 
     elif call.text == "Удалить траты":
         try:
@@ -273,22 +290,22 @@ def callback_worker(call):
             bot.register_next_step_handler(msg, choose_expense_to_delete)
         except:
             bot.send_message(call.chat.id, 'В этот день не было трат')
-            send_keyboard(call, "Чем еще могу помочь?")  # TODO: new phrase
+            send_keyboard(call, "Что делаем дальше")
 
     elif call.text == "График трат":
         try:
             send_plot(call)
         except:
             bot.send_message(call.chat.id, 'Нет трат за неделю')
-            send_keyboard(call, "Чем еще могу помочь?")  # TODO: new phrase
-"""
+            send_keyboard(call, "Что делаем дальше")
+
     elif call.text == "Обработать файл с тратами":
         try:
-            msg = bot.send_message(call.chat.id, 'Загрузи файл в формате дата, название расхода, сумма')
+            msg = bot.send_message(call.chat.id, 'Жду файл в формате txt через пробел: дата, название расхода, сумма')
             bot.register_next_step_handler(msg, send_file)
         except:
             bot.send_message(call.chat.id, "Файл не загрузился")
             send_keyboard(call, "Что делаем дальше?")
-"""
+
 
 bot.polling(none_stop=True)
