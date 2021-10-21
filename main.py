@@ -237,8 +237,6 @@ def send_file(msg):
         sql = """insert into expenses (user_id, expense, expense_dt, amount)
                     values(?, ?, ?, ?)"""
 
-        file_info = bot.get_file(msg.document.file_id)
-        file_name = msg.document.file_name
         file_id_info = bot.get_file(msg.document.file_id)
         downloaded_file = bot.download_file(file_id_info.file_path)
 
