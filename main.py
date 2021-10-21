@@ -242,16 +242,10 @@ def send_file(msg):
         file_id_info = bot.get_file(msg.document.file_id)
         downloaded_file = bot.download_file(file_id_info.file_path)
 
-        with open('/Users/habirova-rr/Documents/ВШЭ' + "/" + file_name, 'wb') as new_file:
-            new_file.write(downloaded_file)
-
-        file = requests.get('https://api.telegram.org/file/bot{0}/{1}'.format(token, file_info.file_path))
-
-        with open('/Users/habirova-rr/Documents/ВШЭ' + "/" + file_name, 'r') as f:
-            input_file = list(f)
+        text = downloaded_file.decode('utf-8')
 
         file_lines = []
-        for r in input_file:
+        for r in text:
             r = r.replace('\n', '')
             if len(r) > 14:
                 file_lines.append(r.split(' '))
