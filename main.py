@@ -75,10 +75,11 @@ def add_expense(msg):
                     dt_parts = dt_from_user.split('.')
                     dt = datetime.strptime('-'.join(['2021', dt_parts[1], dt_parts[0]]), '%Y-%m-%d').date()
                 bot.send_message(msg.chat.id, 'Неверный формат даты')
-        elif dt_from_user == 'Сегодня':  # TODO lower
+        elif dt_from_user.lower() == 'сегодня':
             dt = datetime.strptime(dt_from_user.lower().replace('сегодня', str(today)), '%Y-%m-%d').date()
-        elif dt_from_user == 'Вчера':  # TODO lower
-            dt = datetime.strptime(dt_from_user.replace('Вчера', str(today - timedelta(days=1))), '%Y-%m-%d').date()
+        elif dt_from_user.lower() == 'вчера':
+            dt = datetime.strptime(dt_from_user.lower().replace('вчера', str(today - timedelta(days=1))),
+                                   '%Y-%m-%d').date()
         else:
             bot.send_message(msg.chat.id, 'Неверный формат даты')
 
@@ -115,10 +116,11 @@ def show_expenses(msg):
         text_from_user = str(msg.text)
         dt_from_user = text_from_user.split(' ')[0]
 
-        if dt_from_user == 'Сегодня':
-            dt = datetime.strptime(dt_from_user.replace('Сегодня', str(today)), '%Y-%m-%d').date()
-        elif dt_from_user == 'Вчера':
-            dt = datetime.strptime(dt_from_user.replace('Вчера', str(today - timedelta(days=1))), '%Y-%m-%d').date()
+        if dt_from_user.lower() == 'сегодня':
+            dt = datetime.strptime(dt_from_user.lower().replace('сегодня', str(today)), '%Y-%m-%d').date()
+        elif dt_from_user.lower() == 'вчера':
+            dt = datetime.strptime(dt_from_user.lower().replace('вчера', str(today - timedelta(days=1))),
+                                   '%Y-%m-%d').date()
         elif len(dt_from_user) == 5 and dt_from_user[2] == '.':
             dt_parts = dt_from_user.split('.')
             dt = datetime.strptime('-'.join(['2021', dt_parts[1], dt_parts[0]]), '%Y-%m-%d').date()
