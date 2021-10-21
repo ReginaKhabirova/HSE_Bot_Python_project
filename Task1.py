@@ -244,23 +244,22 @@ def send_file(msg):
         with open('/Users/habirova-rr/Documents/ВШЭ' + "/" + file_name, 'wb') as new_file:
             new_file.write(downloaded_file)
 
-        #file = requests.get('https://api.telegram.org/file/bot{0}/{1}'.format(token, file_info.file_path))
-        text = list(downloaded_file.decode('utf-8'))
+        file = requests.get('https://api.telegram.org/file/bot{0}/{1}'.format(token, file_info.file_path))
+        #text = list(downloaded_file.decode('utf-8'))
 
-        #with open('/Users/habirova-rr/Documents/ВШЭ' + "/" + file_name, 'r') as f:
-         #   input_file = list(f)
+        with open('/Users/habirova-rr/Documents/ВШЭ' + "/" + file_name, 'r') as f:
+            input_file = list(f)
 
         file_lines = []
-        for r in text:
-            #r = r.replace('\n', '')
+        for r in input_file:
+            r = r.replace('\n', '')
             if len(r) > 14:
                 file_lines.append(r.split(' '))
 
         for line in file_lines:
             cursor.execute(sql, (msg.from_user.id, line[1], line[0], line[2]))
 
-        #bot.send_message(msg.chat.id, "Приветики. Файл загружен")
-        bot.send_message(msg.chat.id, text)
+        bot.send_message(msg.chat.id, "Приветики. Файл загружен")
 
 def send_sticker(msg):
     bot.send_message(msg.chat.id, smile)

@@ -13,9 +13,10 @@ import numpy as np
 today = date.today()
 yesterday = today - timedelta(days=1)
 week = today - timedelta(days=7)
+smile = emojize('😊', use_aliases=True)
 
 bot = telebot.TeleBot("2013562061:AAGi4Dwq_wZwiFzhcqG9tnwUh0kmo6RHRuM")
-
+token = "2022735224:AAEP7BtJxHTDS5k3C6s7hil1j3cU_-wQfsw"
 
 # напишем, что делать нашему боту при команде старт
 @bot.message_handler(commands=['start'])
@@ -262,7 +263,6 @@ def send_file(msg):
         bot.send_message(msg.chat.id, "Приветики. Файл загружен")
 
 def send_sticker(msg):
-    smile = emojize('😊', use_aliases=True)
     bot.send_message(msg.chat.id, smile)
 
 # привязываем функции к кнопкам на клавиатуре
