@@ -4,8 +4,8 @@ import sqlite3
 from datetime import date, timedelta
 from datetime import datetime
 import matplotlib
-#import emoji
-#from emoji import emojize
+import emoji
+from emoji import emojize
 import requests
 
 matplotlib.use('Agg')
@@ -15,7 +15,7 @@ import numpy as np
 today = date.today()
 yesterday = today - timedelta(days=1)
 week = today - timedelta(days=7)
-#smile = emojize('😊', use_aliases=True)
+smile = emojize('😊', use_aliases=True)
 
 bot = telebot.TeleBot("2013562061:AAGi4Dwq_wZwiFzhcqG9tnwUh0kmo6RHRuM")
 token = "2013562061:AAGi4Dwq_wZwiFzhcqG9tnwUh0kmo6RHRuM"
@@ -259,8 +259,8 @@ def send_file(msg):
 
         bot.send_message(msg.chat.id, "Приветики. Файл загружен")
 
-#def send_sticker(msg):
-#    bot.send_message(msg.chat.id, smile)
+def send_sticker(msg):
+    bot.send_message(msg.chat.id, smile)
 
 # привязываем функции к кнопкам на клавиатуре
 def callback_worker(call):
@@ -310,8 +310,8 @@ def callback_worker(call):
             send_keyboard(call, "Что делаем дальше?")
 
     elif call.text == "Отдыхаем!":
-        #send_sticker(call)
-        bot.send_message(call.chat.id, 'Прекрасно :)')
+        send_sticker(call)
+        #bot.send_message(call.chat.id, 'Прекрасно :)')
 
 
 bot.polling(none_stop=True)
