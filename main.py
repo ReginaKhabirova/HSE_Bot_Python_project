@@ -66,15 +66,11 @@ def add_expense(msg):
         if len(dt_from_user) == 5 and dt_from_user[2] == '.':
             dt_in = int(dt_from_user[:2])
             month_in = int(dt_from_user[4:5])
-            while True:
-                if dt_in > 31 or month_in > 12:
-                    bot.send_message(msg.chat.id, 'Неверный формат даты')
-                    dt = str(today)
-                    break
-                else:
-                    dt_parts = dt_from_user.split('.')
-                    dt = datetime.strptime('-'.join(['2021', dt_parts[1], dt_parts[0]]), '%Y-%m-%d').date()
+            if dt_in > 31 or month_in > 12:
                 bot.send_message(msg.chat.id, 'Неверный формат даты')
+            else:
+                dt_parts = dt_from_user.split('.')
+                dt = datetime.strptime('-'.join(['2021', dt_parts[1], dt_parts[0]]), '%Y-%m-%d').date()
         elif dt_from_user.lower() == 'сегодня':
             dt = datetime.strptime(dt_from_user.lower().replace('сегодня', str(today)), '%Y-%m-%d').date()
         elif dt_from_user.lower() == 'вчера':
@@ -236,20 +232,23 @@ def send_file(msg):
         cursor = con.cursor()
         sql = """insert into expenses (user_id, expense, expense_dt, amount)
                     values(?, ?, ?, ?)"""
+        try:
+            file_id_info = bot.get_file(msg.document.file_id)
+            downloaded_file = bot.download_file(file_id_info.file_path)
 
-        file_id_info = bot.get_file(msg.document.file_id)
-        downloaded_file = bot.download_file(file_id_info.file_path)
+            text = downloaded_file.decode('utf-8')
+            text = text.split('\n')
 
-        text = downloaded_file.decode('utf-8')
+            file_lines = []
+            for r in text:
+                #r = r.replace('\n', '')
+                if len(r) > 14:
+                    file_lines.append(r.split(' '))
 
-        file_lines = []
-        for r in text:
-            r = r.replace('\n', '')
-            if len(r) > 14:
-                file_lines.append(r.split(' '))
-
-        for line in file_lines:
-            cursor.execute(sql, (msg.from_user.id, line[1], line[0], line[2]))
+            for line in file_lines:
+                cursor.execute(sql, (msg.from_user.id, line[1], line[0], line[2]))
+        except:
+            bot.send_message(msg.chat.id, "Ошибка загрузки файла")
 
         bot.send_message(msg.chat.id, "Приветики. Файл загружен")
 
@@ -304,8 +303,10 @@ def callback_worker(call):
             send_keyboard(call, "Что делаем дальше?")
 
     elif call.text == "Отдыхаем!":
-        send_sticker(call)
-        #bot.send_message(call.chat.id, 'Прекрасно :)')
+        try:
+            send_sticker(call)
+        except:
+            bot.send_message(call.chat.id, 'Прекрасно :)')
 
 
 bot.polling(none_stop=True)

@@ -65,21 +65,17 @@ def add_expense(msg):
         if len(dt_from_user) == 5 and dt_from_user[2] == '.':
             dt_in = int(dt_from_user[:2])
             month_in = int(dt_from_user[4:5])
-            while True:
-                if dt_in > 31 or month_in > 12:
-                    bot.send_message(msg.chat.id, 'Неверный формат даты')
-                    dt = str(today)
-                    break
-                else:
-                    dt_parts = dt_from_user.split('.')
-                    dt = datetime.strptime('-'.join(['2021', dt_parts[1], dt_parts[0]]), '%Y-%m-%d').date()
-                bot.send_message(msg.chat.id, 'Неверный формат даты')
+            if dt_in > 31 or month_in > 12:
+                bot.send_message(msg.chat.id, 'Неверный формат даты 1')
+            else:
+                dt_parts = dt_from_user.split('.')
+                dt = datetime.strptime('-'.join(['2021', dt_parts[1], dt_parts[0]]), '%Y-%m-%d').date()
         elif dt_from_user.lower() == 'сегодня':
             dt = datetime.strptime(dt_from_user.lower().replace('сегодня', str(today)), '%Y-%m-%d').date()
         elif dt_from_user.lower() == 'вчера':
             dt = datetime.strptime(dt_from_user.lower().replace('вчера', str(today - timedelta(days=1))), '%Y-%m-%d').date()
         else:
-            bot.send_message(msg.chat.id, 'Неверный формат даты')
+            bot.send_message(msg.chat.id, 'Неверный формат даты 3')
 
         expense_txt = text_from_user.split(' ')[1]
         expense_amt = text_from_user.split(' ')[2]
@@ -234,31 +230,39 @@ def send_file(msg):
         cursor = con.cursor()
         sql = """insert into expenses (user_id, expense, expense_dt, amount)
                     values(?, ?, ?, ?)"""
+        try:
+            #file_info = bot.get_file(msg.document.file_id)
+            #file_name = msg.document.file_name
+            file_id_info = bot.get_file(msg.document.file_id)
+            downloaded_file = bot.download_file(file_id_info.file_path)
 
-        file_info = bot.get_file(msg.document.file_id)
-        file_name = msg.document.file_name
-        file_id_info = bot.get_file(msg.document.file_id)
-        downloaded_file = bot.download_file(file_id_info.file_path)
+            #with open('/Users/habirova-rr/Documents/ВШЭ' + "/" + file_name, 'wb') as new_file:
+            #    new_file.write(downloaded_file)
 
-        with open('/Users/habirova-rr/Documents/ВШЭ' + "/" + file_name, 'wb') as new_file:
-            new_file.write(downloaded_file)
+            #file = requests.get('https://api.telegram.org/file/bot{0}/{1}'.format(token, file_info.file_path))
 
-        file = requests.get('https://api.telegram.org/file/bot{0}/{1}'.format(token, file_info.file_path))
+            #with open('/Users/habirova-rr/Documents/ВШЭ' + "/" + file_name, 'r') as f:
+            #    input_file = list(f)
+            text = downloaded_file.decode('utf-8')
+            text = text.split('\n')
 
-        #with open('/Users/habirova-rr/Documents/ВШЭ' + "/" + file_name, 'r') as f:
-        #    input_file = list(f)
-        text = downloaded_file.decode('utf-8')
+            file_lines = []
+            for r in text:
+                #r = r.replace('\n', '')
+                if len(r) > 14:
+                    file_lines.append(r.split(' '))
 
-        file_lines = []
-        for r in text:
-            r = r.replace('\n', '')
-            if len(r) > 14:
-                file_lines.append(r.split(' '))
+            #bot.send_message(msg.chat.id, file_lines)
 
-        for line in file_lines:
-            cursor.execute(sql, (msg.from_user.id, line[1], line[0], line[2]))
 
-        bot.send_message(msg.chat.id, "Приветики. Файл загружен")
+
+            for line in file_lines:
+                cursor.execute(sql, (msg.from_user.id, line[1], line[0], line[2]))
+        except:
+            bot.send_message(msg.chat.id, 'Ошибка загрузки файла')
+
+        bot.send_message(msg.chat.id, 'Приветики')
+        #bot.send_message(msg.chat.id, "Приветики. Файл загружен")
 
 def send_sticker(msg):
     bot.send_message(msg.chat.id, smile)
