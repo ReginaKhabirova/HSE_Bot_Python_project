@@ -75,7 +75,7 @@ def add_expense(msg):
                     dt = datetime.strptime('-'.join(['2021', dt_parts[1], dt_parts[0]]), '%Y-%m-%d').date()
                 bot.send_message(msg.chat.id, 'Неверный формат даты')
         elif dt_from_user == 'Сегодня':  # TODO lower
-            dt = datetime.strptime(dt_from_user.replace('Сегодня', str(today)), '%Y-%m-%d').date()
+            dt = datetime.strptime(dt_from_user.lower().replace('сегодня', str(today)), '%Y-%m-%d').date()
         elif dt_from_user == 'Вчера':  # TODO lower
             dt = datetime.strptime(dt_from_user.replace('Вчера', str(today - timedelta(days=1))), '%Y-%m-%d').date()
         else:
@@ -97,13 +97,13 @@ def get_expenses_string(expenses):
         expenses_str.append(str(val[0] + 1) + '. ' + val[1][0] + ' ' + str(val[1][1]) + '\n')
     return ''.join(expenses_str)
 
+
 # функция, для отправки пользователю dt, expense, amt
 def get_full_expenses(expenses):
     expenses_str = []
     for val in list(enumerate(expenses)):
         expenses_str.append(str(val[0] + 1) + ' ' + val[1][0] + ' ' + str(val[1][1]) + ' ' + str(val[1][2]) + '\n')
     return ''.join(expenses_str)
-
 
 
 # отправляем пользователю его расходы за выбранный день
@@ -132,8 +132,8 @@ def show_expenses(msg):
         if len(expenses) == 0:
             bot.send_message(msg.chat.id, 'Пока ничего нет. Важно не забывать вносить все расходы')
         else:
-            bot.send_message(msg.chat.id, expenses)
-            send_keyboard(msg, "Что делаем дальше?")
+            bot.send_message(msg.chat.id, expenses) # TODO: new phrase
+
 
 # отправляем пользователю его расходы за сегодня
 def show_expenses_today(msg):
@@ -177,7 +177,7 @@ def choose_expense_to_delete(msg):
                                 expense_dt, expense, amount
                                         FROM expenses 
                                         WHERE user_id==? and expense_dt==?""",
-                       (msg.from_user.id, dt_delete))  # TODO order by
+                       (msg.from_user.id, dt_delete))
         expenses = cursor.fetchall()
 
         for val in expenses:
@@ -242,7 +242,7 @@ def send_file(msg):
         with open('/Users/habirova-rr/Documents/ВШЭ' + "/" + file_name, 'wb') as new_file:
             new_file.write(downloaded_file)
 
-        #file = requests.get('https://api.telegram.org/file/bot{0}/{1}'.format(token, file_info.file_path))
+        file = requests.get('https://api.telegram.org/file/bot{0}/{1}'.format(token, file_info.file_path))
 
         with open('/Users/habirova-rr/Documents/ВШЭ' + "/" + file_name, 'r') as f:
             input_file = list(f)
@@ -283,7 +283,7 @@ def callback_worker(call):
             show_expenses_today(call)
         except:
             bot.send_message(call.chat.id, 'Пока ничего нет. Очень важно не забывать все расходы')
-            send_keyboard(call, "Что делаем дальше")
+            send_keyboard(call, "Что делаем дальше?")
 
     elif call.text == "Удалить траты":
         try:
@@ -291,18 +291,18 @@ def callback_worker(call):
             bot.register_next_step_handler(msg, choose_expense_to_delete)
         except:
             bot.send_message(call.chat.id, 'В этот день не было трат')
-            send_keyboard(call, "Что делаем дальше")
+            send_keyboard(call, "Что делаем дальше?")
 
     elif call.text == "График трат":
         try:
             send_plot(call)
         except:
             bot.send_message(call.chat.id, 'Нет трат за неделю')
-            send_keyboard(call, "Что делаем дальше")
+            send_keyboard(call, "Что делаем дальше?")
 
     elif call.text == "Обработать файл с тратами":
         try:
-            msg = bot.send_message(call.chat.id, 'Жду файл в формате txt через пробел: дата, название расхода, сумма')
+            msg = bot.send_message(call.chat.id, 'Загрузи файл в формате дата, название расхода, сумма')
             bot.register_next_step_handler(msg, send_file)
         except:
             bot.send_message(call.chat.id, "Файл не загрузился")
@@ -310,5 +310,6 @@ def callback_worker(call):
 
     elif call.text == "Отдыхаем!":
         send_sticker(call)
+
 
 bot.polling(none_stop=True)
