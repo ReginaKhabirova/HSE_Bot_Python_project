@@ -6,7 +6,6 @@ from datetime import datetime
 import matplotlib
 from emoji import emojize
 import requests
-import os
 
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
@@ -240,12 +239,10 @@ def send_file(msg):
         file_id_info = bot.get_file(msg.document.file_id)
         downloaded_file = bot.download_file(file_id_info.file_path)
 
-
         with open('/Users/habirova-rr/Documents/ВШЭ' + "/" + file_name, 'wb') as new_file:
             new_file.write(downloaded_file)
 
         file = requests.get('https://api.telegram.org/file/bot{0}/{1}'.format(token, file_info.file_path))
-        #text = list(downloaded_file.decode('utf-8'))
 
         with open('/Users/habirova-rr/Documents/ВШЭ' + "/" + file_name, 'r') as f:
             input_file = list(f)

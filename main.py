@@ -5,6 +5,7 @@ from datetime import date, timedelta
 from datetime import datetime
 import matplotlib
 from emoji import emojize
+import requests
 
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
@@ -16,7 +17,7 @@ week = today - timedelta(days=7)
 smile = emojize('😊', use_aliases=True)
 
 bot = telebot.TeleBot("2013562061:AAGi4Dwq_wZwiFzhcqG9tnwUh0kmo6RHRuM")
-token = "2022735224:AAEP7BtJxHTDS5k3C6s7hil1j3cU_-wQfsw"
+token = "2013562061:AAGi4Dwq_wZwiFzhcqG9tnwUh0kmo6RHRuM"
 
 # напишем, что делать нашему боту при команде старт
 @bot.message_handler(commands=['start'])
@@ -96,13 +97,13 @@ def get_expenses_string(expenses):
         expenses_str.append(str(val[0] + 1) + '. ' + val[1][0] + ' ' + str(val[1][1]) + '\n')
     return ''.join(expenses_str)
 
-
 # функция, для отправки пользователю dt, expense, amt
 def get_full_expenses(expenses):
     expenses_str = []
     for val in list(enumerate(expenses)):
         expenses_str.append(str(val[0] + 1) + ' ' + val[1][0] + ' ' + str(val[1][1]) + ' ' + str(val[1][2]) + '\n')
     return ''.join(expenses_str)
+
 
 
 # отправляем пользователю его расходы за выбранный день
@@ -134,7 +135,6 @@ def show_expenses(msg):
             bot.send_message(msg.chat.id, expenses)
             send_keyboard(msg, "Что делаем дальше?")
 
-
 # отправляем пользователю его расходы за сегодня
 def show_expenses_today(msg):
     with sqlite3.connect('expenses_hse.db') as con:
@@ -150,7 +150,6 @@ def show_expenses_today(msg):
         else:
             bot.send_message(msg.chat.id, expenses)
             send_keyboard(msg, "Что делаем дальше?")
-
 
 # выыделяет одно дело, которое пользователь хочет удалить
 def choose_expense_to_delete(msg):
@@ -179,8 +178,6 @@ def choose_expense_to_delete(msg):
                                         FROM expenses 
                                         WHERE user_id==? and expense_dt==?""",
                        (msg.from_user.id, dt_delete))  # TODO order by
-
-        # достанем результат запроса
         expenses = cursor.fetchall()
 
         for val in expenses:
@@ -188,8 +185,7 @@ def choose_expense_to_delete(msg):
         msg = bot.send_message(msg.from_user.id,
                                text="Выбери одну трату из списка",
                                reply_markup=markup)
-        bot.register_next_step_handler(msg, delete_expense)
-
+        bot.register_next_step_handler(msg, delete_expense) # TODO добавить - ничего не удалять
 
 def delete_expense(msg):
     with sqlite3.connect('expenses_hse.db') as con:
