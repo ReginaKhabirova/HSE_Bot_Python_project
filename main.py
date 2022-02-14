@@ -17,8 +17,7 @@ yesterday = today - timedelta(days=1)
 week = today - timedelta(days=7)
 smile = emojize('😊', use_aliases=True)
 
-bot = telebot.TeleBot("2013562061:AAGi4Dwq_wZwiFzhcqG9tnwUh0kmo6RHRuM")
-token = "2013562061:AAGi4Dwq_wZwiFzhcqG9tnwUh0kmo6RHRuM"
+bot = telebot.TeleBot("")
 
 # напишем, что делать нашему боту при команде старт
 @bot.message_handler(commands=['start'])
